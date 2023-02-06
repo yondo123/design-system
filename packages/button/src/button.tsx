@@ -1,100 +1,103 @@
 /** @jsxImportSource @emotion/react */
+import { variantPresetColors } from '@jdesignlab/theme';
+import type { ColorToken, Color } from '@jdesignlab/theme';
+import type { ButtonVariant, ButtonSize, ButtonProps } from './buttonTypes';
+import { getColorByToken, hexToRgba } from '@jdesignlab/theme';
 
-import {css} from '@emotion/react';
-import variantPresetColors from '@jdesignlab/theme';
-import type {ColorToken, Color} from '@jdesignlab/theme';
-import {ButtonSize, ButtonState} from './buttonTypes';
+// utils
+// const getColorByToken = (color: ColorToken) => {
+//     color = color || buttonDefaultColorToken;
+//     const defaultVariant = 'base';
+//     const baseColor = color.includes('-') ? color.split('-')[0] : color;
+//     const colorVariant = color.includes('-') ? color.split('-')[1] : defaultVariant;
+//     if (variantPresetColors[baseColor]) {
+//         const parsedColor = variantPresetColors[baseColor][colorVariant];
+//         return parsedColor;
+//     }
+// };
 
-type ButtonProps = {
-    children: React.ReactNode;
-    state?: ButtonState;
-    size?: ButtonSize;
-    color?: ColorToken;
+const buttonDefaultColorToken: ColorToken = 'green-base';
+const whiteish = getColorByToken('grey-darken4');
+
+const buttonSizeSet: ButtonSize[] = ['sm', 'md', 'lg', 'xl'];
+
+const buttonDefaultStyle = {
+    backgroundColor: getColorByToken(buttonDefaultColorToken),
+    fontWeight: 'bold',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
 };
 
-const Button = ({state, size, children, color}: ButtonProps) => {
-    const getTokens = (colorToken: ColorToken) => {
-        return colorToken.split('.');
+const buttonVariantStyle = (variant: ButtonVariant, color: ColorToken) => {
+    const parsedColor = getColorByToken(color);
+    const switchBackground = {
+        background: 'none',
+        color: parsedColor
     };
 
+    switch (variant) {
+        case 'outline':
+            return {
+                ...switchBackground,
+                border: `solid ${parsedColor} 1px`,
+                '&:hover': { background: parsedColor, color: whiteish }
+            };
+        case 'ghost':
+            return {
+                ...switchBackground,
+                '&:hover': { background: parsedColor, color: whiteish }
+            };
+        case 'link':
+            return {
+                ...switchBackground,
+                '&:hover': { color: parsedColor, textDecoration: 'underline' }
+            };
+        case 'unstyled':
+            return {
+                background: 'none'
+            };
+        default: // solid
+            return {
+                backgroundColor: parsedColor,
+                color: whiteish,
+                '&:hover': { background: `${hexToRgba(parsedColor, 0.7)}` }
+            };
+    }
+};
+
+const buttonSizeStyle = (size: ButtonSize) => {
+    const sizeIndex = buttonSizeSet.indexOf(size);
+    return {
+        height: `${(sizeIndex + 3) * 8}px`,
+        fontSize: (sizeIndex + 6) * 2,
+        padding: `0 ${(sizeIndex + 3) * 4}px`
+    };
+};
+
+const buttonDisabledStyle = (disabled: boolean) => {
+    return disabled ? { cursor: 'not-allowed', '&:hover': { opacity: 1 } } : { cursor: 'pointer' };
+};
+
+const Button = ({ children, variant, size, color, disabled, onClick }: ButtonProps) => {
+    const buttonStyle = {
+        ...buttonDefaultStyle,
+        ...buttonVariantStyle(variant ?? 'solid', color ?? buttonDefaultColorToken),
+        ...buttonSizeStyle(size ?? 'md'),
+        ...buttonDisabledStyle(disabled ?? false)
+    };
     return (
-        <button
-            css={[
-                color
-                    ? css`
-                          background-color: ${variantPresetColors[getTokens(color)[0]][getTokens(color)[1]]};
-                      `
-                    : css`
-                          background-color: ${variantPresetColors.green.base};
-                      `,
-                buttonBaseStyle,
-                sizeTheme[size || 'md'],
-                stateTheme[state || 'fill']
-            ]}
-        >
+        <button onClick={onClick} css={buttonStyle}>
             {children}
         </button>
     );
 };
 
-const buttonBaseStyle = css`
-    font-weight: bold;
-    width: fit-content;
-    border-style: none;
-    border-radius: 12px;
-    color: #fff;
-    cursor: pointer;
-`;
-
-const sizeTheme = {
-    sm: css`
-        font-size: 8px;
-        padding: 8px;
-    `,
-    md: css`
-        font-size: 12px;
-        padding: 12px 8px;
-    `,
-    lg: css`
-        font-size: 18px;
-        padding: 16px 12px;
-    `,
-    xl: css`
-        font-size: 24px;
-        padding: 16px;
-    `
-};
-
-const stateTheme = {
-    fill: css`
-        &:hover {
-            opacity: 0.5;
-        }
-    `,
-    ghost: css`
-        color: red;
-        border-style: none;
-        background-color: transparent;
-        &:hover {
-            opacity: 1;
-        }
-    `,
-    outline: css`
-        background-color: #fff;
-        color: #000;
-        border: 1px solid #000;
-        &:hover {
-            opacity: 0.5;
-        }
-    `,
-    disabled: css`
-        background-color: ${variantPresetColors.grey.lighten3};
-        color: ${variantPresetColors.grey.base};
-        cursor: not-allowed;
-        &:hover {
-            opacity: 1;
-        }
-    `
+Button.displayName = 'Button';
+Button.defaultProps = {
+    variant: 'solid',
+    size: 'md',
+    children: 'button'
 };
 
 export default Button;
